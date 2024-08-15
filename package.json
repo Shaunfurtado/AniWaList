@@ -6,6 +6,10 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.1.0",
+    "@elysiajs/html": "^1.1.0",
+    "@kitajs/html": "^4.2.1",
+    "@kitajs/ts-html-plugin": "^4.0.2",
     "elysia": "latest"
   },
   "devDependencies": {
