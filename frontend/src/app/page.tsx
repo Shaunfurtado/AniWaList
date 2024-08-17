@@ -102,6 +102,23 @@ export default function Home() {
     }
   };
 
+  const handleAddToWatchlist = async (title: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/anime`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titles: title, status: "yet to watch" }),
+      });
+      if (response.ok) {
+        console.log("Anime added to watchlist successfully");
+      } else {
+        console.error("Error adding anime to watchlist:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error adding anime to watchlist:", error);
+    }
+  };
+
   const handleEdit = (anime: Anime) => {
     setEditingId(anime.id);
     setEditTitle(anime.title);
@@ -137,7 +154,6 @@ export default function Home() {
 
           <select id="Tab" className="w-full rounded-md">
             <option selected>Home</option>
-            <option>Library</option>
           </select>
         </div>
 
@@ -147,21 +163,14 @@ export default function Home() {
               href="/"
               className="shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
             >
-              Home
-            </a>
-
-            <a
-              href="Library"
-              className="shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-            >
-              Library
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+                Anime List
+              </h1>
             </a>
           </div>
         </div>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-        Anime List
-      </h1>
+
       <div>
         <button onClick={handleScanLibrary} disabled={isScanning}>
           {isScanning ? "Scanning..." : "Scan Anime Library"}
@@ -221,6 +230,13 @@ export default function Home() {
             </div>
             <button
               type="submit"
+              onClick={(e) => {
+                const statusSelected = document.querySelector('input[name="status"]:checked');
+                if (!statusSelected) {
+                  e.preventDefault();
+                  alert("Please select either 'Completed' or 'Yet to Watch'");
+                }
+              }}
               className="inline-block rounded-xl border border-indigo-600 bg-indigo-600 px-12 py-3 text-sm font-medium text-white hover:bg-transparent hover:text-indigo-600 focus:outline-none focus:ring active:text-indigo-500"
             >
               Add Anime
@@ -247,7 +263,11 @@ export default function Home() {
             <th className="border p-2 whitespace-nowrap px-4 py-2 font-medium text-gray-900">
               Title
             </th>
-            {!showLibrary && (
+            {showLibrary ? (
+              <th className="border p-2 whitespace-nowrap px-4 py-2 font-medium text-gray-900">
+                Action
+              </th>
+            ) : (
               <>
                 <th className="border p-2 whitespace-nowrap px-4 py-2 font-medium text-gray-900">
                   Status
@@ -265,6 +285,14 @@ export default function Home() {
                 <tr key={item.id}>
                   <td className="border p-2 text-center whitespace-nowrap px-4 py-2 font-medium text-gray-900">
                     {item.title}
+                  </td>
+                  <td className="border p-2 text-center">
+                    <button
+                      onClick={() => handleAddToWatchlist(item.title)}
+                      className="block rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
+                    >
+                      Add to Watchlist
+                    </button>
                   </td>
                 </tr>
               ))

@@ -45,6 +45,11 @@ const app = new Elysia()
     const titleList = titles.split("\n").filter((title: string) => title.trim() !== "");
 
     for (const title of titleList) {
+      const existingAnime = db.query("SELECT * FROM anime WHERE title = ?").get([title.trim()]);
+      if (existingAnime) {
+        return { success: false, message: `Anime with title '${title.trim()}' already exists` };
+      }
+      
       db.run("INSERT INTO anime (title, status) VALUES (?, ?)", [title.trim(), status]);
     }
 
