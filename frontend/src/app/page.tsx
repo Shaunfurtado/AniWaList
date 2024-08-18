@@ -153,7 +153,7 @@ export default function Home() {
           </label>
 
           <select id="Tab" className="w-full rounded-md">
-            <option selected>Home</option>
+            <option>Home</option>
           </select>
         </div>
 
