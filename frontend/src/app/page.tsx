@@ -144,6 +144,21 @@ export default function Home() {
     }
   };
 
+  const handleDeleteAnime = async (id: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/anime/${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        fetchAnimeList();
+      } else {
+        console.error("Error deleting anime:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error deleting anime:", error);
+    }
+  };
+
   return (
     <main className="flex flex-col justify-between p-24">
       <div>
@@ -326,12 +341,20 @@ export default function Home() {
                   </td>
                   <td className="border p-2 ">
                     {editingId === anime.id ? (
-                      <button
-                        onClick={handleSaveEdit}
-                        className="block rounded-full bg-green-500 px-8 py-3 text-sm font-medium group-hover:bg-transparent"
-                      >
-                        Save
-                      </button>
+                        <div className="flex space-x-2">
+                        <button
+                          onClick={handleSaveEdit}
+                          className="block rounded-full bg-green-500 px-8 py-3 text-sm font-medium group-hover:bg-transparent"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAnime(anime.id)}
+                          className="block rounded-full bg-red-500 px-8 py-3 text-sm font-medium group-hover:bg-transparent"
+                        >
+                          Delete
+                        </button>
+                        </div>
                     ) : (
                       <button
                         onClick={() => handleEdit(anime)}

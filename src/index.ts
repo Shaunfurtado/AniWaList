@@ -45,7 +45,7 @@ const app = new Elysia()
     const titleList = titles.split("\n").filter((title: string) => title.trim() !== "");
 
     for (const title of titleList) {
-      const existingAnime = db.query("SELECT * FROM anime WHERE title = ?").get([title.trim()]);
+      const existingAnime = db.query("SELECT * FROM anime WHERE title = ?").get(title.trim());
       if (existingAnime) {
         return { success: false, message: `Anime with title '${title.trim()}' already exists` };
       }
@@ -76,6 +76,22 @@ const app = new Elysia()
       status: t.String()
     })
   })
+  .delete("/api/anime/:id", ({ params }) => {
+    const { id } = params;
+    
+    const existingAnime = db.query("SELECT * FROM anime WHERE id = ?").get(id);
+    if (!existingAnime) {
+      return { success: false, message: `Anime with id '${id}' does not exist` };
+    }
+    
+    db.run("DELETE FROM anime WHERE id = ?", [id]);
+    
+    return { success: true, message: "Anime deleted successfully" };
+    }, {
+    params: t.Object({
+      id: t.Numeric()
+    })
+    })
   .post("/api/scan-library", () => {
     try {
       const jsonData = JSON.parse(readFileSync('./data/anime-offline-database.json', 'utf-8'));
