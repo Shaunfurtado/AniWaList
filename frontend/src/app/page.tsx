@@ -13,6 +13,7 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filter, setFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showLibrary, setShowLibrary] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<{
@@ -24,15 +25,20 @@ export default function Home() {
     if (showLibrary) {
       fetchLibraryList(currentPage, setLibraryList, setTotalPages);
     } else {
-      fetchAnimeList(currentPage, filter, setAnimeList, setTotalPages);
+      fetchAnimeList(currentPage, filter, setAnimeList, setTotalPages, searchTerm);
     }
-  }, [currentPage, filter, showLibrary]);
+  }, [currentPage, filter, showLibrary, searchTerm]);
 
   const handleScan = async () => {
     setIsScanning(true);
     const result = await handleScanLibrary();
     setScanResult(result);
     setIsScanning(false);
+  };
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setCurrentPage(1); 
   };
 
   return (
@@ -59,6 +65,17 @@ export default function Home() {
             </a>
           </div>
         </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={handleSearch}
+          className="w-full p-2 border rounded mb-2 border-blue-600"
+        placeholder="Search anime titles"
+        />
       </div>
 
       {/* Scan Library Button */}

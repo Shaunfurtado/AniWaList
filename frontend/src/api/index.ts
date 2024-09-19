@@ -6,11 +6,14 @@ export const fetchAnimeList = async (
   currentPage: number,
   filter: string,
   setAnimeList: React.Dispatch<React.SetStateAction<Anime[]>>,
-  setTotalPages: React.Dispatch<React.SetStateAction<number>>
+  setTotalPages: React.Dispatch<React.SetStateAction<number>>,
+  searchTerm: string = ""
 ) => {
   try {
+    // Build the query parameters dynamically
+    const searchQuery = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : "";
     const response = await fetch(
-      `${API_URL}/api/anime?page=${currentPage}&filter=${filter}`
+      `${API_URL}/api/anime?page=${currentPage}&filter=${filter}${searchQuery}`
     );
     const data = await response.json();
     setAnimeList(data.anime);
@@ -19,6 +22,7 @@ export const fetchAnimeList = async (
     console.error("Error fetching anime list:", error);
   }
 };
+
 
 export const fetchLibraryList = async (
   currentPage: number,
