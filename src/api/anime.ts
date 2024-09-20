@@ -1,6 +1,8 @@
 // api/anime.ts
 import { db } from "../database";
 import { t } from "elysia";
+import Papa from 'papaparse';
+import { writeFileSync } from 'fs';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -30,7 +32,7 @@ export const animeRoutes = (app: any) => {
     const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   
     return { anime, totalPages, currentPage: page };
-  });  
+  });
 
   // Add Anime
   app.post(
@@ -101,4 +103,17 @@ export const animeRoutes = (app: any) => {
       }),
     }
   );
+
+  // Export Anime to CSV
+  app.get("/api/anime/export-csv", () => {
+    const anime = db.query("SELECT id, title, status FROM anime").all();
+    
+    // Convert the anime data to CSV
+    const csv = Papa.unparse(anime);
+
+    // Save CSV to a file
+    writeFileSync("./anime_export.csv", csv);
+
+    return { success: true, message: "Anime data exported to CSV successfully" };
+  });
 };

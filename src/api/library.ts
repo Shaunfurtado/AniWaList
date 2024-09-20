@@ -1,6 +1,7 @@
 // api/library.ts
 import { db } from "../database";
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
+import Papa from 'papaparse';
 
 export const libraryRoutes = (app: any) => {
   app.post("/api/scan-library", () => {
@@ -46,5 +47,18 @@ export const libraryRoutes = (app: any) => {
     const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
     
     return { library, totalPages, currentPage: page };
+  });
+
+  // Export Library to CSV
+  app.get("/api/library/export-csv", () => {
+    const library = db.query("SELECT * FROM library").all();
+    
+    // Convert the library data to CSV
+    const csv = Papa.unparse(library);
+
+    // Save CSV to a file
+    writeFileSync("./library_export.csv", csv);
+
+    return { success: true, message: "Library data exported to CSV successfully" };
   });
 };
