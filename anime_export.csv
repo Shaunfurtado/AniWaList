@@ -66,7 +66,7 @@ id,title,status
 68,Ao Haru Ride(blue spring ride),yet to watch
 69,noblesse,yet to watch
 70,Ikebukuro West Gate Park,yet to watch
-71,gleipnir,yet to watch
+71,gleipnir,completed
 72,kimi ni todOke,yet to watch
 73,to your eternity,yet to watch
 74,Oreshura,yet to watch
@@ -286,9 +286,9 @@ id,title,status
 288,Golden kamuy,yet to watch
 289,Angel beats,yet to watch
 290,Yona of the dawn,yet to watch
-291,Dr stone,yet to watch
+291,Dr stone,completed
 292,Neon genesis Evangelion,completed
-293,Frieren: Beyond Journey's End,yet to watch
+293,Frieren: Beyond Journey's End,completed
 294,Edens zero,completed
 295,Full-Time Magister,yet to watch
 296,Wistoria: Wand and Sword,yet to watch
@@ -333,7 +333,6 @@ id,title,status
 335,Pokemon The Series: Sun And Moon,completed
 336,Pokemon: Battle Frontier,completed
 337,Pokemon: Advanced Battle,completed
-338,Pokemon: Master Quest,completed
 339,Pokemon: The Johto Journeys,completed
 340,Pokemon BW Adventures In Unova And Beyond,completed
 341,Pokemon Chronicles,completed
