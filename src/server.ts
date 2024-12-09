@@ -2,11 +2,12 @@ import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { animeRoutes } from "./api/anime";
 import { libraryRoutes } from "./api/library";
-import { db } from "./database"; // Assuming your database setup is here
+import { db } from "./database";
+import { swagger } from '@elysiajs/swagger'
 import Papa from "papaparse";
 import { writeFileSync } from "fs";
 
-const app = new Elysia().use(cors());
+const app = new Elysia().use(cors()).use(swagger());
 
 animeRoutes(app);
 libraryRoutes(app);
