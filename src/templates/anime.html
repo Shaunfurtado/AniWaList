@@ -1,168 +1,304 @@
-<!-- Main Container with x-cloak to hide before load -->
-<div x-data="animeManager()" x-init="fetchAnime()" x-cloak class="space-y-6">
+<div x-data="animeApp()" x-init="init()" class="min-h-[80vh]" x-cloak>
     
-    <!-- Header & Controls -->
-    <div class="flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <input type="text" x-model="search" @input.debounce.500ms="fetchAnime()" 
-                   placeholder="Search titles..." 
-                   class="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none w-full sm:w-64 text-white placeholder-gray-500">
+    <!-- Floating Header Controls -->
+    <div class="sticky top-24 z-30 mb-10">
+        <div class="bg-surface/80 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl flex flex-col md:flex-row justify-between gap-3 mx-auto max-w-4xl transition-all hover:border-white/20">
             
-            <select x-model="filter" @change="fetchAnime()" class="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-white cursor-pointer">
-                <option value="all">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="yet to watch">Yet to Watch</option>
-            </select>
-        </div>
+            <!-- Search Bar -->
+            <div class="relative flex-1 group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i data-lucide="search" class="h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors"></i>
+                </div>
+                <input type="text" x-model="search" @input.debounce.400ms="resetAndFetch()"
+                       class="block w-full pl-11 pr-4 py-3 bg-transparent text-white placeholder-gray-500 focus:outline-none text-sm font-medium"
+                       placeholder="Search your collection...">
+                
+                <!-- Clear Button -->
+                <button x-show="search" @click="search = ''; resetAndFetch()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-white">
+                    <i data-lucide="x" class="h-4 w-4"></i>
+                </button>
+            </div>
 
-        <div class="flex gap-2">
-            <button @click="openAddModal()" class="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg transition shadow-lg font-medium text-sm">
-                Add Anime
-            </button>
+            <!-- Divider -->
+            <div class="w-px bg-white/10 hidden md:block"></div>
+
+            <!-- Filters & Action -->
+            <div class="flex items-center gap-2 px-2">
+                <select x-model="filter" @change="resetAndFetch()" 
+                        class="bg-white/5 text-gray-300 text-sm rounded-xl border-none focus:ring-0 py-2.5 px-4 cursor-pointer hover:bg-white/10 transition">
+                    <option value="all">All</option>
+                    <option value="completed">Completed</option>
+                    <option value="yet to watch">To Watch</option>
+                </select>
+
+                <button @click="openAddModal()" 
+                        class="bg-gradient-to-r from-primary to-indigo-600 hover:to-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="plus" class="w-4 h-4"></i> New Entry
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Anime List -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <!-- Stats Overview (Optional but Cool) -->
+    <div class="flex gap-6 mb-8 px-4 overflow-x-auto pb-2 no-scrollbar">
+        <div class="text-sm text-gray-400 font-medium">
+            Total Items: <span class="text-white font-bold" x-text="totalCount"></span>
+        </div>
+        <div class="text-sm text-gray-400 font-medium">
+            Showing: <span class="text-white font-bold" x-text="items.length"></span>
+        </div>
+    </div>
+
+    <!-- Dynamic Masonry Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
         <template x-for="anime in items" :key="anime.id">
-            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 shadow-sm hover:shadow-md transition flex justify-between items-start gap-3">
-                <div class="flex-1 min-w-0">
-                    <h3 class="text-lg font-semibold text-gray-100 truncate" x-text="anime.title"></h3>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium mt-2 border"
-                          :class="anime.status === 'completed' ? 'bg-green-900/30 text-green-400 border-green-900' : 'bg-yellow-900/30 text-yellow-400 border-yellow-900'">
-                        <span x-text="anime.status"></span>
-                    </span>
-                </div>
-                <div class="flex flex-col gap-2">
-                    <button @click="openEditModal(anime)" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
-                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                    </button>
-                    <button @click="deleteAnime(anime.id)" class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
+            <div class="group relative bg-surface border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all duration-300 hover:shadow-2xl hover:shadow-black/50 hover:-translate-y-1 overflow-hidden">
+                
+                <!-- Generated Gradient Accent (Top Bar) -->
+                <div class="absolute top-0 left-0 right-0 h-1 opacity-70 transition-opacity group-hover:opacity-100"
+                     :style="`background: linear-gradient(90deg, ${getGradient(anime.id)[0]}, ${getGradient(anime.id)[1]})`"></div>
+
+                <!-- Background Glow -->
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-500"></div>
+
+                <!-- Content -->
+                <div class="relative z-10 flex flex-col h-full justify-between">
+                    <div>
+                        <!-- Status Badge -->
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] uppercase font-bold tracking-wider border"
+                                :class="anime.status === 'completed' 
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'">
+                                <span class="w-1.5 h-1.5 rounded-full" :class="anime.status === 'completed' ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+                                <span x-text="anime.status === 'completed' ? 'Done' : 'Queue'"></span>
+                            </div>
+                            
+                            <!-- ID Hash (Decoration) -->
+                            <span class="text-[10px] text-gray-600 font-mono" x-text="'#' + anime.id.toString().padStart(4, '0')"></span>
+                        </div>
+
+                        <!-- Title -->
+                        <h3 class="text-xl font-bold text-white leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors" x-text="anime.title"></h3>
+                    </div>
+
+                    <!-- Actions (Fade in on Hover) -->
+                    <div class="mt-6 pt-4 border-t border-white/5 flex justify-end gap-2 opacity-100 lg:opacity-0 lg:translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                        <button @click="openEditModal(anime)" class="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title="Edit">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </button>
+                        <button @click="deleteAnime(anime.id)" class="p-2 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors" title="Delete">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </template>
     </div>
 
-    <!-- Pagination -->
-    <div class="flex justify-center items-center gap-4 mt-8" x-show="totalPages > 1">
-        <button @click="page--; fetchAnime()" :disabled="page === 1" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg disabled:opacity-50 text-sm hover:bg-gray-700">Prev</button>
-        <span class="text-sm text-gray-400">Page <span x-text="page" class="text-white"></span> of <span x-text="totalPages"></span></span>
-        <button @click="page++; fetchAnime()" :disabled="page === totalPages" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg disabled:opacity-50 text-sm hover:bg-gray-700">Next</button>
+    <!-- Loading Spinner (Infinite Scroll) -->
+    <div x-show="loading" class="flex justify-center py-10">
+        <div class="flex items-center gap-3 text-primary">
+            <i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i>
+            <span class="text-sm font-medium">Loading more...</span>
+        </div>
     </div>
 
-    <!-- MODAL: Add Anime -->
-    <div x-show="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" x-cloak>
-        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl transform transition-all" @click.away="showAddModal = false">
-            <h3 class="text-xl font-bold text-white mb-4">Add Anime</h3>
-            
-            <label class="block text-sm font-medium text-gray-400 mb-1">Titles (One per line)</label>
-            <textarea x-model="newTitles" rows="5" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-primary outline-none mb-4"></textarea>
-            
-            <label class="block text-sm font-medium text-gray-400 mb-2">Status</label>
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <label class="cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2" :class="newStatus === 'completed' ? 'border-green-500 bg-green-900/20' : 'border-gray-600'">
-                    <input type="radio" value="completed" x-model="newStatus" class="hidden"> <span class="text-sm">Completed</span>
-                </label>
-                <label class="cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2" :class="newStatus === 'yet to watch' ? 'border-yellow-500 bg-yellow-900/20' : 'border-gray-600'">
-                    <input type="radio" value="yet to watch" x-model="newStatus" class="hidden"> <span class="text-sm">Yet to Watch</span>
-                </label>
-            </div>
+    <!-- End of List Message -->
+    <div x-show="!loading && page >= totalPages && items.length > 0" class="text-center py-10 text-gray-500 text-sm">
+        You've reached the end of the void.
+    </div>
 
-            <div class="flex justify-end gap-3">
-                <button @click="showAddModal = false" class="px-4 py-2 text-gray-300 hover:text-white">Cancel</button>
-                <button @click="submitAdd()" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg">Add Anime</button>
+    <!-- Empty State -->
+    <div x-show="!loading && items.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="w-20 h-20 bg-surface rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl">
+            <i data-lucide="ghost" class="w-10 h-10 text-gray-600"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white">No anime found</h3>
+        <p class="text-gray-500 max-w-xs mt-2">Your search returned no results. Maybe add it yourself?</p>
+        <button @click="openAddModal()" class="mt-6 text-primary hover:text-white text-sm font-medium transition-colors">Add New Anime &rarr;</button>
+    </div>
+
+    <!-- MODAL: Add Anime (Modern Center) -->
+    <div x-show="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" @click="showAddModal = false"></div>
+        
+        <div class="relative bg-[#13151b] w-full max-w-lg rounded-2xl shadow-2xl border border-white/10 overflow-hidden transform transition-all scale-100">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Add to Collection</h2>
+                    <button @click="showAddModal = false" class="text-gray-500 hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Titles (Paste list)</label>
+                        <div class="relative">
+                            <textarea x-model="newTitles" rows="5" class="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-white focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none resize-none transition-all font-mono text-sm" placeholder="Naruto&#10;Bleach&#10;One Piece"></textarea>
+                            <div class="absolute bottom-3 right-3 text-xs text-gray-600">Multiple lines supported</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Initial Status</label>
+                        <div class="grid grid-cols-2 bg-black/30 p-1 rounded-xl border border-white/5">
+                            <button @click="newStatus = 'yet to watch'" 
+                                    class="py-2.5 text-sm font-medium rounded-lg transition-all"
+                                    :class="newStatus === 'yet to watch' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'">
+                                Yet to Watch
+                            </button>
+                            <button @click="newStatus = 'completed'" 
+                                    class="py-2.5 text-sm font-medium rounded-lg transition-all"
+                                    :class="newStatus === 'completed' ? 'bg-emerald-500/20 text-emerald-400 shadow' : 'text-gray-500 hover:text-gray-300'">
+                                Completed
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-white/5 flex justify-end gap-3">
+                    <button @click="showAddModal = false" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition">Cancel</button>
+                    <button @click="submitAdd()" class="px-6 py-2.5 bg-primary hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 transition transform active:scale-95">Save Entries</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- MODAL: Edit Anime -->
-    <div x-show="editingItem" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" x-cloak>
-        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl" @click.away="editingItem = null">
-            <h3 class="text-xl font-bold text-white mb-4">Edit Anime</h3>
+    <div x-show="editingItem" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="editingItem = null"></div>
+        <div class="relative bg-[#13151b] w-full max-w-md rounded-2xl shadow-2xl border border-white/10 overflow-hidden p-8">
+            <h2 class="text-xl font-bold text-white mb-6">Edit Details</h2>
             
-            <label class="block text-sm font-medium text-gray-400 mb-1">Title</label>
-            <input type="text" x-model="editForm.title" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:ring-primary outline-none mb-4">
-            
-            <label class="block text-sm font-medium text-gray-400 mb-2">Status</label>
-            <select x-model="editForm.status" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:ring-primary outline-none mb-6">
-                <option value="completed">Completed</option>
-                <option value="yet to watch">Yet to Watch</option>
-            </select>
+            <div class="space-y-5">
+                <div>
+                    <label class="text-xs text-gray-500 uppercase font-bold">Title</label>
+                    <input type="text" x-model="editForm.title" class="w-full mt-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-primary/50 outline-none">
+                </div>
+                
+                <div>
+                    <label class="text-xs text-gray-500 uppercase font-bold">Status</label>
+                    <div class="flex gap-3 mt-2">
+                        <button @click="editForm.status = 'yet to watch'" 
+                                class="flex-1 py-2 border rounded-lg text-sm transition"
+                                :class="editForm.status === 'yet to watch' ? 'border-primary text-primary bg-primary/10' : 'border-white/10 text-gray-500 hover:border-white/30'">
+                            Yet to Watch
+                        </button>
+                        <button @click="editForm.status = 'completed'" 
+                                class="flex-1 py-2 border rounded-lg text-sm transition"
+                                :class="editForm.status === 'completed' ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10' : 'border-white/10 text-gray-500 hover:border-white/30'">
+                            Completed
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-            <div class="flex justify-end gap-3">
-                <button @click="editingItem = null" class="px-4 py-2 text-gray-300 hover:text-white">Cancel</button>
-                <button @click="submitEdit()" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg">Save Changes</button>
+            <div class="mt-8 flex justify-end gap-3">
+                <button @click="editingItem = null" class="text-gray-400 hover:text-white text-sm">Cancel</button>
+                <button @click="submitEdit()" class="bg-white text-black px-6 py-2 rounded-lg font-bold text-sm hover:bg-gray-200 transition">Update</button>
             </div>
         </div>
     </div>
+
 </div>
 
 <script>
-    function animeManager() {
+    function animeApp() {
         return {
             items: [],
             page: 1,
             totalPages: 1,
+            totalCount: 0, // Assuming API sends this or we approximate
             search: '',
             filter: 'all',
+            loading: false,
+            
+            // Modals
             showAddModal: false,
             newTitles: '',
             newStatus: 'yet to watch',
             editingItem: null,
             editForm: { id: 0, title: '', status: '' },
 
-            async fetchAnime() {
+            init() {
+                this.fetchAnime();
+                // Infinite Scroll Listener
+                window.addEventListener('scroll', () => {
+                    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+                    if (scrollTop + clientHeight >= scrollHeight - 100 && !this.loading && this.page < this.totalPages) {
+                        this.page++;
+                        this.fetchAnime(true); // true = append mode
+                    }
+                });
+            },
+
+            // Helper to generate cool colors from ID
+            getGradient(id) {
+                const colors = [
+                    ['#ec4899', '#8b5cf6'], // Pink to Purple
+                    ['#3b82f6', '#06b6d4'], // Blue to Cyan
+                    ['#84cc16', '#10b981'], // Lime to Emerald
+                    ['#f59e0b', '#ef4444'], // Amber to Red
+                    ['#6366f1', '#a855f7'], // Indigo to Purple
+                ];
+                return colors[id % colors.length];
+            },
+
+            async resetAndFetch() {
+                this.page = 1;
+                this.items = [];
+                await this.fetchAnime(false);
+            },
+
+            async fetchAnime(append = false) {
+                this.loading = true;
                 try {
                     const params = new URLSearchParams({ page: this.page, filter: this.filter, search: this.search });
                     const res = await fetch(`/api/anime?${params}`);
                     const data = await res.json();
-                    this.items = data.anime || [];
-                    this.totalPages = data.totalPages || 1;
-                    this.page = data.currentPage || 1;
+                    
+                    if (append) {
+                        this.items = [...this.items, ...data.anime];
+                    } else {
+                        this.items = data.anime;
+                    }
+                    
+                    this.totalPages = data.totalPages;
+                    
+                    // Update icons
                     this.$nextTick(() => window.refreshIcons());
-                } catch (e) {
-                    console.error("API Error:", e);
+                } catch(e) {
+                    console.error(e);
+                } finally {
+                    this.loading = false;
                 }
             },
 
-            openAddModal() {
-                this.newTitles = '';
-                this.newStatus = 'yet to watch';
-                this.showAddModal = true;
-            },
-
+            openAddModal() { this.newTitles = ''; this.newStatus = 'yet to watch'; this.showAddModal = true; },
+            
             async submitAdd() {
-                if (!this.newTitles.trim()) return;
-                await fetch('/api/anime', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ titles: this.newTitles, status: this.newStatus })
-                });
+                if(!this.newTitles.trim()) return;
+                await fetch('/api/anime', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({titles: this.newTitles, status: this.newStatus}) });
                 this.showAddModal = false;
-                this.fetchAnime();
+                this.resetAndFetch();
             },
 
-            openEditModal(anime) {
-                this.editingItem = anime;
-                this.editForm = { ...anime };
-            },
-
+            openEditModal(anime) { this.editForm = {...anime}; this.editingItem = anime; },
+            
             async submitEdit() {
-                await fetch(`/api/anime/${this.editForm.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: this.editForm.title, status: this.editForm.status })
-                });
+                await fetch(`/api/anime/${this.editForm.id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: this.editForm.title, status: this.editForm.status}) });
                 this.editingItem = null;
-                this.fetchAnime();
+                // Update local item to avoid refetching entire list causing jump
+                const index = this.items.findIndex(i => i.id === this.editForm.id);
+                if(index !== -1) {
+                    this.items[index] = { ...this.items[index], title: this.editForm.title, status: this.editForm.status };
+                }
             },
 
             async deleteAnime(id) {
-                if(!confirm('Delete this anime?')) return;
+                if(!confirm('Remove from collection?')) return;
                 await fetch(`/api/anime/${id}`, { method: 'DELETE' });
-                this.fetchAnime();
+                this.items = this.items.filter(i => i.id !== id); // Optimistic update
             }
         }
     }

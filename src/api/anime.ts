@@ -4,7 +4,7 @@ import { t } from "elysia";
 import Papa from 'papaparse';
 import { writeFileSync } from 'fs';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 24; 
 
 export const animeRoutes = (app: any) => {
   // Fetch Anime with Pagination and Filter
@@ -16,7 +16,6 @@ export const animeRoutes = (app: any) => {
     let queryStr = "SELECT id, title, status FROM anime";
     let countQueryStr = "SELECT COUNT(*) as count FROM anime";
     
-    // If search is provided, override the filter and pagination logic
     if (search) {
       queryStr += ` WHERE title LIKE '%${search}%'`;
       countQueryStr += ` WHERE title LIKE '%${search}%'`;

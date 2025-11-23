@@ -3,78 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime List</title>
+    <title>AniTrack Pro</title>
     
-    <!-- 1. Tailwind CSS (CDN) -->
+    <!-- Fonts: Inter for that clean SaaS look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Tailwind Configuration (Inline) -->
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
                 extend: {
                     colors: {
-                        primary: '#6366f1', // Indigo
-                        secondary: '#1f2937',
+                        background: '#0f1117', // Very dark blue-grey
+                        surface: '#181b25',    // Slightly lighter
+                        primary: '#818cf8',    // Soft Indigo
+                        accent: '#c084fc',     // Purple
+                        success: '#4ade80',    // Neon Green
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
                     }
                 }
             }
         }
     </script>
-
-    <!-- 3. Alpine.js (Logic) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
-    
-    <!-- 4. Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- 5. Shared Logic & Helpers -->
-    <script>
-        // Helper to refresh icons dynamically
-        window.refreshIcons = () => {
-            if (window.lucide) {
-                setTimeout(() => lucide.createIcons(), 50);
-            }
-        };
-    </script>
-
     <style>
-        /* Force hide elements until Alpine is loaded */
         [x-cloak] { display: none !important; }
+        body { background-color: #0f1117; color: #e2e8f0; overflow-x: hidden; }
         
-        body { background-color: #111827; color: #f3f4f6; }
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+        /* Glass Effect Utility */
+        .glass {
+            background: rgba(24, 27, 37, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
     </style>
 </head>
-<body class="min-h-screen font-sans antialiased selection:bg-primary selection:text-white">
+<body class="antialiased min-h-screen relative selection:bg-primary selection:text-white">
 
-    <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-8">
-                    <div class="text-2xl font-bold text-white tracking-tight">Anime<span class="text-primary">List</span></div>
-                    <div class="flex space-x-1">
-                        <a href="/" class="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-700 text-gray-300">
-                           My Watchlist
-                        </a>
-                        <a href="/library" class="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-700 text-gray-300">
-                           Global Library
-                        </a>
+    <!-- Animated Ambient Background -->
+    <div class="fixed inset-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob"></div>
+        <div class="absolute top-0 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob animation-delay-2000"></div>
+        <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-blue-500/20 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- Floating Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-40 glass transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 group cursor-pointer">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+                        <i data-lucide="activity" class="text-white w-6 h-6"></i>
                     </div>
+                    <div class="flex flex-col">
+                        <span class="text-lg font-bold text-white tracking-tight leading-none">Ani<span class="text-primary">Track</span></span>
+                        <span class="text-[10px] text-gray-400 font-medium tracking-widest uppercase">Best Watchlist</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Pills -->
+                <div class="flex bg-surface/50 p-1 rounded-full border border-white/5 shadow-inner backdrop-blur-md">
+                    <a href="/" class="px-6 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                       :class="window.location.pathname === '/' ? 'bg-white/10 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'">
+                       Watchlist
+                    </a>
+                    <a href="/library" class="px-6 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                       :class="window.location.pathname === '/library' ? 'bg-white/10 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'">
+                       Library
+                    </a>
+                </div>
+
+                <!-- Right Actions -->
+                <div class="flex items-center gap-4">
+                    <a href="http://localhost:3001/swagger" target="_blank" class="p-2 text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="code-2" class="w-5 h-5"></i>
+                    </a>
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 border border-gray-500/30"></div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- Main Content Area -->
+    <main class="max-w-[1400px] mx-auto pt-28 pb-12 px-4 sm:px-6 lg:px-8 relative z-0">
         <!-- CONTENT_PLACEHOLDER -->
     </main>
 
+    <!-- Icon Refresher -->
     <script>
-        // Initial Icon Load
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) lucide.createIcons();
-        });
+        window.refreshIcons = () => { if (window.lucide) setTimeout(() => lucide.createIcons(), 50); };
+        document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
     </script>
 </body>
 </html>
