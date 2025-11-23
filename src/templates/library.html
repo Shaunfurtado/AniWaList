@@ -1,0 +1,108 @@
+<div x-data="libraryManager()" x-init="fetchLibrary()" class="space-y-6">
+    
+    <!-- Header with Scan Actions -->
+    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md flex flex-col md:flex-row justify-between items-center gap-6">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Library Reference</h2>
+            <p class="text-gray-400 text-sm mt-1">Browse titles scanned from your offline database.</p>
+        </div>
+        <div class="flex gap-3">
+            <button @click="scanLibrary()" :disabled="scanning" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 rounded-lg transition font-medium text-sm shadow-lg">
+                <i data-lucide="refresh-cw" class="w-4 h-4" :class="{'animate-spin': scanning}"></i> 
+                <span x-text="scanning ? 'Scanning...' : 'Scan Database'"></span>
+            </button>
+            <a href="/api/library/export-csv" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg transition font-medium text-sm shadow-lg text-white">
+                <i data-lucide="download" class="w-4 h-4"></i> Export
+            </a>
+        </div>
+    </div>
+
+    <!-- Library Table -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-900 text-gray-400 uppercase text-xs font-semibold tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4">Title</th>
+                        <th class="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    <template x-for="item in items" :key="item.id">
+                        <tr class="hover:bg-gray-750 transition group">
+                            <td class="px-6 py-4 text-gray-200 font-medium" x-text="item.title"></td>
+                            <td class="px-6 py-4 text-right">
+                                <button @click="addToWatchlist(item.title)" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-primary hover:bg-primary hover:text-white rounded-md text-xs font-bold transition uppercase tracking-wide border border-gray-600 hover:border-primary">
+                                    <i data-lucide="plus" class="w-3 h-3"></i> Watchlist
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="items.length === 0" x-cloak>
+                        <td colspan="2" class="px-6 py-8 text-center text-gray-500">
+                            Library is empty. Click "Scan Database" to populate.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center items-center gap-4 mt-6" x-show="totalPages > 1" x-cloak>
+        <button @click="page--; fetchLibrary()" :disabled="page === 1" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-700 transition text-sm">Prev</button>
+        <span class="text-sm text-gray-400">Page <span x-text="page" class="text-white font-bold"></span> of <span x-text="totalPages"></span></span>
+        <button @click="page++; fetchLibrary()" :disabled="page === totalPages" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-700 transition text-sm">Next</button>
+    </div>
+</div>
+
+<script>
+    function libraryManager() {
+        return {
+            items: [],
+            page: 1,
+            totalPages: 1,
+            scanning: false,
+
+            async fetchLibrary() {
+                const res = await fetch(`/api/library?page=${this.page}`);
+                const data = await res.json();
+                this.items = data.library;
+                this.totalPages = data.totalPages;
+                this.page = data.currentPage;
+                this.$nextTick(() => window.refreshIcons());
+            },
+
+            async scanLibrary() {
+                this.scanning = true;
+                try {
+                    const res = await fetch('/api/scan-library', { method: 'POST' });
+                    const data = await res.json();
+                    // Optional: Simple toast could go here
+                    alert(data.message); 
+                    this.fetchLibrary();
+                } catch(e) {
+                    alert("Error scanning library");
+                } finally {
+                    this.scanning = false;
+                }
+            },
+
+            async addToWatchlist(title) {
+                // Replicates Next.js addToWatchlist logic
+                const res = await fetch('/api/anime', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ titles: title, status: 'yet to watch' })
+                });
+                
+                if (res.ok) {
+                    alert(`Added "${title}" to your watchlist!`);
+                } else {
+                    const data = await res.json();
+                    alert(data.message || "Failed to add");
+                }
+            }
+        }
+    }
+</script>

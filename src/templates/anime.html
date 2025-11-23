@@ -1,0 +1,169 @@
+<!-- Main Container with x-cloak to hide before load -->
+<div x-data="animeManager()" x-init="fetchAnime()" x-cloak class="space-y-6">
+    
+    <!-- Header & Controls -->
+    <div class="flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <input type="text" x-model="search" @input.debounce.500ms="fetchAnime()" 
+                   placeholder="Search titles..." 
+                   class="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none w-full sm:w-64 text-white placeholder-gray-500">
+            
+            <select x-model="filter" @change="fetchAnime()" class="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-white cursor-pointer">
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="yet to watch">Yet to Watch</option>
+            </select>
+        </div>
+
+        <div class="flex gap-2">
+            <button @click="openAddModal()" class="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg transition shadow-lg font-medium text-sm">
+                Add Anime
+            </button>
+        </div>
+    </div>
+
+    <!-- Anime List -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <template x-for="anime in items" :key="anime.id">
+            <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 shadow-sm hover:shadow-md transition flex justify-between items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-lg font-semibold text-gray-100 truncate" x-text="anime.title"></h3>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium mt-2 border"
+                          :class="anime.status === 'completed' ? 'bg-green-900/30 text-green-400 border-green-900' : 'bg-yellow-900/30 text-yellow-400 border-yellow-900'">
+                        <span x-text="anime.status"></span>
+                    </span>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <button @click="openEditModal(anime)" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                    </button>
+                    <button @click="deleteAnime(anime.id)" class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center items-center gap-4 mt-8" x-show="totalPages > 1">
+        <button @click="page--; fetchAnime()" :disabled="page === 1" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg disabled:opacity-50 text-sm hover:bg-gray-700">Prev</button>
+        <span class="text-sm text-gray-400">Page <span x-text="page" class="text-white"></span> of <span x-text="totalPages"></span></span>
+        <button @click="page++; fetchAnime()" :disabled="page === totalPages" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg disabled:opacity-50 text-sm hover:bg-gray-700">Next</button>
+    </div>
+
+    <!-- MODAL: Add Anime -->
+    <div x-show="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" x-cloak>
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl transform transition-all" @click.away="showAddModal = false">
+            <h3 class="text-xl font-bold text-white mb-4">Add Anime</h3>
+            
+            <label class="block text-sm font-medium text-gray-400 mb-1">Titles (One per line)</label>
+            <textarea x-model="newTitles" rows="5" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-primary outline-none mb-4"></textarea>
+            
+            <label class="block text-sm font-medium text-gray-400 mb-2">Status</label>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <label class="cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2" :class="newStatus === 'completed' ? 'border-green-500 bg-green-900/20' : 'border-gray-600'">
+                    <input type="radio" value="completed" x-model="newStatus" class="hidden"> <span class="text-sm">Completed</span>
+                </label>
+                <label class="cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2" :class="newStatus === 'yet to watch' ? 'border-yellow-500 bg-yellow-900/20' : 'border-gray-600'">
+                    <input type="radio" value="yet to watch" x-model="newStatus" class="hidden"> <span class="text-sm">Yet to Watch</span>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button @click="showAddModal = false" class="px-4 py-2 text-gray-300 hover:text-white">Cancel</button>
+                <button @click="submitAdd()" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg">Add Anime</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Edit Anime -->
+    <div x-show="editingItem" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" x-cloak>
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl" @click.away="editingItem = null">
+            <h3 class="text-xl font-bold text-white mb-4">Edit Anime</h3>
+            
+            <label class="block text-sm font-medium text-gray-400 mb-1">Title</label>
+            <input type="text" x-model="editForm.title" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:ring-primary outline-none mb-4">
+            
+            <label class="block text-sm font-medium text-gray-400 mb-2">Status</label>
+            <select x-model="editForm.status" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:ring-primary outline-none mb-6">
+                <option value="completed">Completed</option>
+                <option value="yet to watch">Yet to Watch</option>
+            </select>
+
+            <div class="flex justify-end gap-3">
+                <button @click="editingItem = null" class="px-4 py-2 text-gray-300 hover:text-white">Cancel</button>
+                <button @click="submitEdit()" class="px-4 py-2 bg-primary hover:bg-indigo-600 text-white rounded-lg">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function animeManager() {
+        return {
+            items: [],
+            page: 1,
+            totalPages: 1,
+            search: '',
+            filter: 'all',
+            showAddModal: false,
+            newTitles: '',
+            newStatus: 'yet to watch',
+            editingItem: null,
+            editForm: { id: 0, title: '', status: '' },
+
+            async fetchAnime() {
+                try {
+                    const params = new URLSearchParams({ page: this.page, filter: this.filter, search: this.search });
+                    const res = await fetch(`/api/anime?${params}`);
+                    const data = await res.json();
+                    this.items = data.anime || [];
+                    this.totalPages = data.totalPages || 1;
+                    this.page = data.currentPage || 1;
+                    this.$nextTick(() => window.refreshIcons());
+                } catch (e) {
+                    console.error("API Error:", e);
+                }
+            },
+
+            openAddModal() {
+                this.newTitles = '';
+                this.newStatus = 'yet to watch';
+                this.showAddModal = true;
+            },
+
+            async submitAdd() {
+                if (!this.newTitles.trim()) return;
+                await fetch('/api/anime', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ titles: this.newTitles, status: this.newStatus })
+                });
+                this.showAddModal = false;
+                this.fetchAnime();
+            },
+
+            openEditModal(anime) {
+                this.editingItem = anime;
+                this.editForm = { ...anime };
+            },
+
+            async submitEdit() {
+                await fetch(`/api/anime/${this.editForm.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: this.editForm.title, status: this.editForm.status })
+                });
+                this.editingItem = null;
+                this.fetchAnime();
+            },
+
+            async deleteAnime(id) {
+                if(!confirm('Delete this anime?')) return;
+                await fetch(`/api/anime/${id}`, { method: 'DELETE' });
+                this.fetchAnime();
+            }
+        }
+    }
+</script>

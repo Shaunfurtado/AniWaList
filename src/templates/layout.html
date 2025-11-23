@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime List</title>
+    
+    <!-- 1. Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Tailwind Configuration (Inline) -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1', // Indigo
+                        secondary: '#1f2937',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 3. Alpine.js (Logic) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    
+    <!-- 4. Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- 5. Shared Logic & Helpers -->
+    <script>
+        // Helper to refresh icons dynamically
+        window.refreshIcons = () => {
+            if (window.lucide) {
+                setTimeout(() => lucide.createIcons(), 50);
+            }
+        };
+    </script>
+
+    <style>
+        /* Force hide elements until Alpine is loaded */
+        [x-cloak] { display: none !important; }
+        
+        body { background-color: #111827; color: #f3f4f6; }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased selection:bg-primary selection:text-white">
+
+    <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-8">
+                    <div class="text-2xl font-bold text-white tracking-tight">Anime<span class="text-primary">List</span></div>
+                    <div class="flex space-x-1">
+                        <a href="/" class="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-700 text-gray-300">
+                           My Watchlist
+                        </a>
+                        <a href="/library" class="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-700 text-gray-300">
+                           Global Library
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <!-- CONTENT_PLACEHOLDER -->
+    </main>
+
+    <script>
+        // Initial Icon Load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
